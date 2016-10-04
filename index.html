@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+<title>SANKEY Experiment</title>
+<link href="css/estilo.css" rel="stylesheet">
+<script src="utils/d3.js"></script>
+<script src="utils/jquery-3.1.0.min.js"></script>
+<script src="utils/funcoes.js"></script>
+<script src="utils/sankey.js"></script>
+</head>
+<body> 
+<p id="chart">
+ 
+<script>
+  
+var units = "Widgets";
+ 
+var margin = {top: 10, right: 10, bottom: 10, left: 10},
+    width = 1200 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
+ 
+var formatNumber = d3.format(",.0f"),    // zero decimal places
+    format = function(d) { return formatNumber(d) + " " + units; },
+    color = d3.scale.category20();
+ 
+// append the svg canvas to the page
+var svg = d3.select("#chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", 
+          "translate(" + margin.left + "," + margin.top + ")");
+ 
+// Set the sankey diagram properties
+var sankey = d3.sankey()
+    .nodeWidth(36)
+    .nodePadding(6)
+    .size([width, height]);
+ 
+var path = sankey.link();
+ 
+// load the data
+d3.json("sankey-formatted.json", function(error, graph) {
+ 
+    var nodeMap = {};
+    graph.nodes.forEach(function(x) { nodeMap[x.name] = x; });
+    graph.links = graph.links.map(function(x) {
+      return {
+        source: nodeMap[x.source],
+        target: nodeMap[x.target],
+        value: x.value
+      };
+    });
+ 
+  sankey
+      .nodes(graph.nodes)
+      .links(graph.links)
+      .layout(32);
+
+//conjunto de links
+links = {}
+graph.links.forEach(function(link){
+  (links[parseInt(link.source.x, 10)] = links[parseInt(link.source.x, 10)] || []).push(link.source.name.replace(/\s+/g, '_')+"-"+link.target.name.replace(/\s+/g, '_'));
+}); 
+
+
+Object.keys(links).forEach(function (el, i) {
+  if (i < 1)return;
+  colorLinks(el, i-1, graph.flows);
+
+});
+
+//conjunto de nodes
+nodes = []
+graph.nodes.forEach(function(node){
+      nodes.push(node);
+});
+
+// add in the links
+  var link = svg.append("g").selectAll(".link")
+      .data(graph.links)
+    .enter().append("path")
+      .attr("class", "link")
+      .attr("d", path)
+      .attr("data-cores", function(d){ 
+        var posicao = Object.keys(links).sort(function(a,b) {return +parseInt(a) > +parseInt(b)? 1: -1}).indexOf("" + parseInt(d.source.x, 10))
+        if (posicao <= 0) return; 
+        posicao--;
+        var aux = links["" + parseInt(d.source.x, 10)];
+        var resp = {};
+        for (flow in graph.flows) {
+          var range = graph.flows[flow][posicao];
+          resp[flow] = range[aux.indexOf((d.source.name+"-"+d.target.name).replace(/\s+/g, '_'))];
+        }
+        return JSON.stringify(resp);
+      })
+        
+      .style("stroke-width", function(d) { return Math.max(1, d.dy); })
+      .sort(function(a, b) { return b.dy - a.dy; })
+      .attr("id", function(d) { return (d.source.name+"-"+d.target.name).replace(/\s+/g, '_');})
+      .on("mousedown", function (event) { linkHandler(event, this);});
+
+
+// add the link titles
+  link.append("title")
+        .text(function(d) {
+        return d.source.name + " → " + 
+                d.target.name + "\n" + format(d.value); })
+        .attr("value", function(d) { return d.value });
+
+
+// add in the nodes
+  var node = svg.append("g").selectAll(".node")
+      .data(graph.nodes)
+      .enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { 
+      return "translate(" + d.x + "," + d.y + ")"; })
+      .call(d3.behavior.drag()
+      .origin(function(d) { return d; })
+      .on("dragstart", function() { 
+      this.parentNode.appendChild(this); })
+      .on("drag", dragmove));
+ 
+// add the rectangles for the nodes
+  node.append("rect")
+      .attr("height", function(d) { return d.dy; })
+      .attr("width", sankey.nodeWidth())
+      .style("fill", function(d) { return getColor(d.name); })
+      //.style("stroke", function(d) { 
+     // return d3.rgb(d.color).darker(2); })
+    .append("title")
+      .text(function(d) { 
+        return ((d.name.indexOf("Abandono") >= 0) ? "Abandono" : d.name) + "\n" + format(d.value); });
+
+// add in the title for the nodes
+  node.append("text")
+       .attr("x", function(d) { return d.dx /2})
+       .attr("y", function(d) { return d.dy +20 })
+       .attr("text-anchor", "middle")
+       .attr("transform", null)
+       .text(function(d) { 
+         var name = (d.name.indexOf("Abandono") >= 0) ? "Abandono" : d.name;
+          if (d.x == 0)
+              return name;
+          else{
+            var index = Object.keys(links).sort().indexOf(String(parseInt(d.x)))
+            if (index < 0)
+                 index = Object.keys(links).length;
+            if (name.indexOf("Abandono") >= 0)
+              index--;
+            return index + ". " + name;
+          }    
+        })
+     .filter(function(d) { return d.x  })
+
+document.getElementById("filtro").innerHTML = setFilters();
+
+// the function for moving the nodes
+  function dragmove(d) {
+    d3.select(this).attr("transform", 
+        "translate(" + (
+             d.x = Math.max(0, Math.min(width - d.dx, d3.event.x))
+          ) + "," + (
+                   d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))
+            ) + ")");
+    sankey.relayout();
+    link.attr("d", path);
+  }
+});
+ 
+</script>
+<div id="filtro" style="display:flex;"></div>
+<br><br>
+ <!-- <input type="button" id="limpar" value="Ressetar"> -->
+</body>
+</html>
