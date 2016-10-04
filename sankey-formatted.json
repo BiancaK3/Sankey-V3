@@ -10,33 +10,50 @@
 {"source":"Atalhos","target":"Visitas área logada","value":"1000"},
 
 
-{"source":"Visitas área logada","target":"Productos y Servicios","value":"8000"},
-{"source":"Visitas área logada","target":"mis datos","value":"4000"},
+{"source":"Visitas área logada","target":"Productos y Servicios","value":"8000", 
+		"flow":{"Facebook":"1400", "Banner":"500", "Warning":"600", "Google":"2000", "Outros":"1500", "Menu":"1500", "Atalhos":"500"}},
+{"source":"Visitas área logada","target":"Mis Datos","value":"4000", 
+		"flow" : {"Facebook":"600", "Banner":"500", "Warning":"400", "Google":"1000", "Outros":"500", "Menu":"500", "Atalhos":"500"}},
 
 
-{"source":"Productos y Servicios","target":"Datos","value":"5000"},
-{"source":"Productos y Servicios","target":"Abandono","value":"3000"},
-{"source":"mis datos","target":"Datos","value":"2500"},
-{"source":"mis datos","target":"Abandono1","value":"1500"},
+{"source":"Productos y Servicios","target":"Datos","value":"5000", 
+		"flow":{"Facebook":"900", "Banner":"300", "Warning":"200", "Google":"1500", "Outros":"100", "Menu":"750", "Atalhos":"350"}},
+{"source":"Productos y Servicios","target":"Abandono","value":"3000", 
+		"flow":{"Facebook":"500", "Banner":"200", "Warning":"400", "Google":"500", "Outros":"500", "Menu":"750", "Atalhos":"150"}},
+{"source":"Mis Datos","target":"Datos","value":"2500", 
+		"flow":{"Facebook":"400", "Banner":"300", "Warning":"200", "Google":"800", "Outros":"200", "Menu":"250", "Atalhos":"350"}},
+{"source":"Mis Datos","target":"Abandono1","value":"1500", 
+		"flow":{"Facebook":"200", "Banner":"200", "Warning":"200", "Google":"200", "Outros":"300", "Menu":"250", "Atalhos":"150"}},
 
 
-{"source":"Datos","target":"PIN nuevo","value":"6000"},
-{"source":"Datos","target":"Abandono2","value":"1500"},
+{"source":"Datos","target":"PIN nuevo","value":"6000", 
+		"flow":{"Facebook":"1000", "Banner":"400", "Warning":"300", "Google":"2000", "Outros":"1000", "Menu":"750", "Atalhos":"550"}},
+{"source":"Datos","target":"Abandono2","value":"1500", 
+		"flow":{"Facebook":"300", "Banner":"200", "Warning":"100", "Google":"300", "Outros":"200", "Menu":"250", "Atalhos":"150"}},
 
 
-{"source":"PIN nuevo","target":"Activación","value":"4500"},
-{"source":"PIN nuevo","target":"Abandono3","value":"1500"},
+{"source":"PIN nuevo","target":"Activación","value":"4500", 
+		"flow":{"Facebook":"800", "Banner":"200", "Warning":"200", "Google":"1700", "Outros":"800", "Menu":"450", "Atalhos":"350"}},
+{"source":"PIN nuevo","target":"Abandono3","value":"1500", 
+		"flow":{"Facebook":"200", "Banner":"200", "Warning":"100", "Google":"300", "Outros":"200", "Menu":"300", "Atalhos":"200"}},
 
 
-{"source":"Activación","target":"Confirmación Cajeros 24 horas","value":"1000"},
-{"source":"Activación","target":"Confirmación Teléfono","value":"1000"},
-{"source":"Activación","target":"Confirmación Sucursales","value":"1000"},
-{"source":"Activación","target":"Teste SMS","value":"1000"},
-{"source":"Activación","target":"Abandono4","value":"500"},
+{"source":"Activación","target":"Confirmación Cajeros 24 horas","value":"1000", 
+		"flow":{"Facebook":"250", "Banner":"50", "Warning":"20", "Google":"400", "Outros":"100", "Menu":"150", "Atalhos":"30"}},
+{"source":"Activación","target":"Confirmación Teléfono","value":"1000", 
+		"flow":{"Facebook":"100", "Banner":"50", "Warning":"20", "Google":"400", "Outros":"200", "Menu":"130", "Atalhos":"100"}},
+{"source":"Activación","target":"Confirmación Sucursales","value":"1000", 
+		"flow":{"Facebook":"100", "Banner":"30", "Warning":"100", "Google":"400", "Outros":"200", "Menu":"70", "Atalhos":"100"}},
+{"source":"Activación","target":"Teste SMS","value":"1000", 
+		"flow":{"Facebook":"250", "Banner":"50", "Warning":"30", "Google":"400", "Outros":"200", "Menu":"30", "Atalhos":"40"}},
+{"source":"Activación","target":"Abandono4","value":"500", 
+		"flow":{"Facebook":"100", "Banner":"20", "Warning":"30", "Google":"100", "Outros":"100", "Menu":"70", "Atalhos":"80"}},
 
 
-{"source":"Teste SMS","target":"Confirmación SMS","value":"800"},
-{"source":"Teste SMS","target":"Abandono5","value":"200"}
+{"source":"Teste SMS","target":"Confirmación SMS","value":"800", 
+		"flow":{"Facebook":"230", "Banner":"30", "Warning":"20", "Google":"300", "Outros":"180", "Menu":"10", "Atalhos":"30"}},
+{"source":"Teste SMS","target":"Abandono5","value":"200", 
+		"flow":{"Facebook":"20", "Banner":"20", "Warning":"10", "Google":"100", "Outros":"20", "Menu":"20", "Atalhos":"10"}}
 ] ,
 "nodes": [
 {"name":"Facebook"},
@@ -48,7 +65,7 @@
 {"name":"Atalhos"},
 {"name":"Visitas área logada"},
 {"name":"Productos y Servicios"},
-{"name":"mis datos"},
+{"name":"Mis Datos"},
 {"name":"Datos"},
 {"name":"PIN nuevo"},
 {"name":"Activación"},
@@ -63,50 +80,6 @@
 {"name":"Abandono3"},
 {"name":"Abandono4"},
 {"name":"Abandono5"}
-] ,
-"flows": 
-{"Facebook" : {"0" : [1400,600], 
-			   "1":[900,500,400,200], 
-			   "2":[1000,300], 
-			   "3":[800,200], 
-			   "4":[250,100,100,250,100], 
-			   "5":[230,20]}, 
-"Banner" : {"0":[500,500], 
-			   "1":[300,200, 300,200], 
-			   "2":[400,200], 
-			   "3":[200,200], 
-			   "4":[50,50,30,50,20], 
-			   "5":[30,20]}, 
-"Warning" : {"0":[600,400], 
-			   "1":[200,400,200,200], 
-			   "2":[300,100], 
-			   "3":[200,100], 
-			   "4":[20,20,100,30,30], 
-			   "5":[20,10]}, 
-"Google" : {"0":[2000,1000], 
-			   "1":[1500,500,800,200], 
-			   "2":[2000,300], 
-			   "3":[1700,300], 
-			   "4":[400,400,400,400,100], 
-			   "5":[300,100]}, 
-"Outros" : {"0":[1500,500], 
-			   "1":[100,500,200,300], 
-			   "2":[1000,200], 
-			   "3":[800,200], 
-			   "4":[100,200,200,200,100], 
-			   "5":[180,20]}, 
-"Menu" : {"0":[1500,500], 
-			   "1":[750,750,250,250], 
-			   "2":[750,250], 
-			   "3":[450,300], 
-			   "4":[150,130,70,30,70], 
-			   "5":[10,20]}, 
-"Atalhos" : {"0":[500,500], 
-			   "1":[350,150,350,150], 
-			   "2":[550,150], 
-			   "3":[350,200], 
-			   "4":[30,100,100,40,80], 
-			   "5":[30,10]}
-	}
+] 
  }
 

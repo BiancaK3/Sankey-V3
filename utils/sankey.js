@@ -53,7 +53,6 @@ d3.sankey = function() {
  
   sankey.link = function() {
     var curvature = .5;
- 
     function link(d) {
       var x0 = d.source.x + d.source.dx,
           x1 = d.target.x,
@@ -84,7 +83,7 @@ d3.sankey = function() {
       node.sourceLinks = [];
       node.targetLinks = [];
     });
-    links.forEach(function(link) {
+    links.forEach(function(link) {        
       var source = link.source,
           target = link.target;
       if (typeof source === "number") source = link.source = nodes[link.source];
@@ -153,17 +152,21 @@ d3.sankey = function() {
       node.x *= kx;
     });
   }
- 
+
   function computeNodeDepths(iterations) {
     var nodesByBreadth = d3.nest()
         .key(function(d) {
-          if (d.sourceLinks.length == 0 && d.name.indexOf("Abandono") >=0){
+          if (d.sourceLinks.length == 0){
+             lastPath = true
              aux = d.targetLinks[0].source.sourceLinks;
-             if (aux[aux.length-2]) 
-                d.x = aux[aux.length-2].target.x;
-             else 
-                d.x = aux[0].target.x;
-             
+             xDoPath = ""
+             for (var i = 0; i < aux.length; i++) {
+               if (aux[i].target.sourceLinks.length > 0){
+                  lastPath = false;  
+                  xDoPath = aux[i].target.x;
+               }
+             };
+             d.x = (lastPath)? aux[aux.length-7].target.x : xDoPath; 
           }
           return d.x; })
         .sortKeys(d3.ascending)

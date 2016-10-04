@@ -27,7 +27,7 @@ var formatNumber = d3.format(",.0f"),    // zero decimal places
 var svg = d3.select("#chart").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
-  .append("g")
+    .append("g")
     .attr("transform", 
           "translate(" + margin.left + "," + margin.top + ")");
  
@@ -37,71 +37,87 @@ var sankey = d3.sankey()
     .nodePadding(6)
     .size([width, height]);
  
-var path = sankey.link();
+var path = sankey.link(), link;
+var original_path = {}; 
  
-// load the data
+// Adiciona os dados jo JSON ao Sankey
 d3.json("sankey-formatted.json", function(error, graph) {
  
     var nodeMap = {};
     graph.nodes.forEach(function(x) { nodeMap[x.name] = x; });
-    graph.links = graph.links.map(function(x) {
-      return {
-        source: nodeMap[x.source],
-        target: nodeMap[x.target],
-        value: x.value
-      };
+  
+    var linksExpandidos = [];
+
+    graph.links.forEach(function(x) {
+      if (x.flow){
+        for (camp in x.flow){
+           linksExpandidos.push ({
+                    source: nodeMap[x.source],
+                    target: nodeMap[x.target],
+                    value: x.flow[camp],
+                    midia: camp
+                  })
+        }
+      }
+      else{
+      linksExpandidos.push ({
+                    source: nodeMap[x.source],
+                    target: nodeMap[x.target],
+                    value: x.value
+                  })
+    }
     });
+    graph.links = linksExpandidos;
  
+ //Processa os dados no formato necessário para o Sankey
   sankey
       .nodes(graph.nodes)
-      .links(graph.links)
+      .links(linksExpandidos)
       .layout(32);
 
-//conjunto de links
+//conjunto de Links separado em passos
 links = {}
+sankeyLinks = []
 graph.links.forEach(function(link){
-  (links[parseInt(link.source.x, 10)] = links[parseInt(link.source.x, 10)] || []).push(link.source.name.replace(/\s+/g, '_')+"-"+link.target.name.replace(/\s+/g, '_'));
+  var passo = links[parseInt(link.source.x, 10)] = links[parseInt(link.source.x, 10)] || []
+  var nome = link.source.name.replace(/\s+/g, '_')+"-"+link.target.name.replace(/\s+/g, '_');
+  if (passo.indexOf(nome) < 0)
+    passo.push(nome);
+  sankeyLinks.push(link)
 }); 
 
-
-Object.keys(links).forEach(function (el, i) {
-  if (i < 1)return;
-  colorLinks(el, i-1, graph.flows);
-
-});
-
-//conjunto de nodes
-nodes = []
+//conjunto de nodes com suas propriedades
+nodes = [] 
+window.original_nodes = {}
 graph.nodes.forEach(function(node){
       nodes.push(node);
+      window.original_nodes[node.name]= {"x": node.x, "y": node.y}
 });
 
-// add in the links
-  var link = svg.append("g").selectAll(".link")
+
+
+
+// Criação de todos os links com dados baseado no D3
+   link = svg.append("g").selectAll(".link")
       .data(graph.links)
-    .enter().append("path")
+      .enter()
+      .append("path")
       .attr("class", "link")
       .attr("d", path)
-      .attr("data-cores", function(d){ 
-        var posicao = Object.keys(links).sort(function(a,b) {return +parseInt(a) > +parseInt(b)? 1: -1}).indexOf("" + parseInt(d.source.x, 10))
-        if (posicao <= 0) return; 
-        posicao--;
-        var aux = links["" + parseInt(d.source.x, 10)];
-        var resp = {};
-        for (flow in graph.flows) {
-          var range = graph.flows[flow][posicao];
-          resp[flow] = range[aux.indexOf((d.source.name+"-"+d.target.name).replace(/\s+/g, '_'))];
-        }
-        return JSON.stringify(resp);
-      })
-        
-      .style("stroke-width", function(d) { return Math.max(1, d.dy); })
+      .attr("stroke-width", function(d) { return Math.max(1, d.dy); })
       .sort(function(a, b) { return b.dy - a.dy; })
-      .attr("id", function(d) { return (d.source.name+"-"+d.target.name).replace(/\s+/g, '_');})
-      .on("mousedown", function (event) { linkHandler(event, this);});
+      .attr("id", function(d) {
+        if (d.midia)
+          return (d.source.name+"-"+d.target.name +"-"+d.midia).replace(/\s+/g, '_');
+        else
+          return (d.source.name+"-"+d.target.name).replace(/\s+/g, '_');
+          })
+      .each(function(d){
+        hoverHandler(d)
+      });
 
 
-// add the link titles
+// adiciona o titulo dos links, ou seja, o que aparece quando há a interação hover nos links
   link.append("title")
         .text(function(d) {
         return d.source.name + " → " + 
@@ -109,68 +125,173 @@ graph.nodes.forEach(function(node){
         .attr("value", function(d) { return d.value });
 
 
-// add in the nodes
+// adiciona os nós (passos)
   var node = svg.append("g").selectAll(".node")
       .data(graph.nodes)
       .enter().append("g")
       .attr("class", "node")
+      .attr("id", function(d) { 
+      return d.name.replace(/\s+/g, '_'); })
       .attr("transform", function(d) { 
       return "translate(" + d.x + "," + d.y + ")"; })
       .call(d3.behavior.drag()
       .origin(function(d) { return d; })
       .on("dragstart", function() { 
       this.parentNode.appendChild(this); })
-      .on("drag", dragmove));
+      .on("drag", dragmove))
+      .each(function(d) {
+        if (d.x == 0) return;
+        if (d.name.indexOf("Abandono") >= 0) return;
+        var posicao = original_nodes[d.name]
+        for (passo in original_nodes){
+           if (passo !== d.name)
+           if (d.x === original_nodes[passo].x && passo.indexOf("Abandono") < 0){
+              d3.select(this).on("mousedown", function (event) {return nodeHandler(d, this);});
+           }     
+        }
+      });
  
-// add the rectangles for the nodes
+// adiciona o retangulo dos nós (passos)
   node.append("rect")
       .attr("height", function(d) { return d.dy; })
       .attr("width", sankey.nodeWidth())
       .style("fill", function(d) { return getColor(d.name); })
-      //.style("stroke", function(d) { 
-     // return d3.rgb(d.color).darker(2); })
     .append("title")
       .text(function(d) { 
         return ((d.name.indexOf("Abandono") >= 0) ? "Abandono" : d.name) + "\n" + format(d.value); });
 
-// add in the title for the nodes
+// adiciona o titulo dos nós (passos)
   node.append("text")
-       .attr("x", function(d) { return d.dx /2})
-       .attr("y", function(d) { return d.dy +20 })
+       .attr("x", function(d) { return d.dx/2})
+       .attr("y", function(d) { return d.dy + 15 })
        .attr("text-anchor", "middle")
+      .style("font-size", "10px")
        .attr("transform", null)
-       .text(function(d) { 
+       .each(function(d) { 
          var name = (d.name.indexOf("Abandono") >= 0) ? "Abandono" : d.name;
-          if (d.x == 0)
-              return name;
-          else{
-            var index = Object.keys(links).sort().indexOf(String(parseInt(d.x)))
+          if (d.x != 0){
+            var index = Object.keys(links).sort().indexOf(String(parseInt(d.x)));
+            var qtdLinks = [], qtdAband =[], index2 = "";
+            links[String(parseInt(d.targetLinks[0].source.x))].forEach(function(link){
+                    if (link.indexOf("Abandono") >= 0) {
+                      if(qtdAband.indexOf(link.split("-")[1]) < 0)
+                         qtdAband.push(link.split("-")[1]);
+                    } else 
+                        if(qtdLinks.indexOf(link.split("-")[1]) < 0)
+                          qtdLinks.push(link.split("-")[1]);
+                })
             if (index < 0)
-                 index = Object.keys(links).length;
-            if (name.indexOf("Abandono") >= 0)
-              index--;
-            return index + ". " + name;
-          }    
+              index = Object.keys(links).length;             
+
+            if (name.indexOf("Abandono") >= 0){
+              index--; 
+              if (qtdAband.length > 1)
+                index2 = qtdAband.indexOf(d.name)+1;                
+            }
+            else{
+              if (qtdLinks.length > 1)
+                index2 = qtdLinks.indexOf(d.name.replace(/\s+/g, '_'))+1;
+            }
+            name = index + "."+ index2 + " " + name
+                
+          } 
+          if (name.length <= 12){
+            d3.select(this).append("tspan").attr("x", function(d) { return d.dx /2}).text(name);
+          }
+          else{
+            var spans = name.split(" ");
+            var i = 0;
+            while (i<spans.length){
+              var dy = (i>0) ? "1em" : 0;
+              if (spans[i].length<=12){
+                d3.select(this).append("tspan").attr("dy", dy).attr("x", function(d) { return d.dx /2}).text(spans[i] + " " + (spans[i+1]|| ""));
+                i+=2;
+              }
+              else{
+                d3.select(this).append("tspan").attr("dy", dy).attr("x", function(d) { return d.dx /2}).text(spans[i]);
+                i++;
+              }
+            }
+
+          }
+
         })
-     .filter(function(d) { return d.x  })
+     .filter(function(d) { return d.x  })  
 
-document.getElementById("filtro").innerHTML = setFilters();
 
-// the function for moving the nodes
+// cria os filtros na base do grafico
+setFilters();
+
+// funçã que move os nós e links
   function dragmove(d) {
-    d3.select(this).attr("transform", 
+      d3.select(this).attr("transform", 
         "translate(" + (
              d.x = Math.max(0, Math.min(width - d.dx, d3.event.x))
           ) + "," + (
                    d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))
             ) + ")");
+    
     sankey.relayout();
     link.attr("d", path);
+
   }
-});
+  
+  clicks (links);
+  //função que volta os nós a posição original
+window.original = function () {
+    for (node in original_nodes){
+      d = original_nodes[node]
+      //document.getElementById(node.replace(/\s+/g, '_')).setAttribute("transform", "translate(" + d.x + "," + d.y + ")");
+       d3.select("#"+node.replace(/\s+/g, '_')).attr("transform", 
+        "translate(" + (
+             d.x 
+          ) + "," + (
+                   d.y 
+            ) + ")");
+
+       
+    }
+    sankey.relayout();
+    
+    // nodes.forEach(function(node) {
+    //   node.sourceLinks.sort(function (a, b) {return a.source.y - b.source.y;});
+    //   node.targetLinks.sort(function (a, b) {return a.target.y - b.target.y;});
+    // });
+    // console.log(nodes)
+    // nodes.forEach(function(node) {
+     
+    //   var sy = 0, ty = 0;
+    //   node.sourceLinks.forEach(function(link) {
+    //     link.sy = sy;
+    //     sy += link.dy+10;
+    //   });
+    //   node.targetLinks.forEach(function(link) {
+    //     link.ty = ty;
+    //     ty += link.dy;
+    //   });
+    // });
+    
+    link.attr("d", path);
+    link.each(function(d){
+      var linkPath
+        if (d.midia)
+          linkPath = original_path[(d.source.name+"-"+d.target.name+"-"+d.midia).replace(/\s+/g, '_')];
+        else
+          linkPath = original_path[(d.source.name+"-"+d.target.name).replace(/\s+/g, '_')];
+          
+          sankey.links(links)
+          
+          d3.select(this).attr("d", linkPath)
+          
+    });
+  }
+}); 
+
+
+//  }
  
 </script>
-<div id="filtro" style="display:flex;"></div>
+<div id="filtro" style="display: flex;"></div>
 <br><br>
  <!-- <input type="button" id="limpar" value="Ressetar"> -->
 </body>
